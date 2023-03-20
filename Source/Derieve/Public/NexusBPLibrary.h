@@ -27,7 +27,7 @@ enum class ESpinDirection : uint8
 
 
 UCLASS(BlueprintType, Category = "Physical Data", meta = (Keywords = "device physical data magic"))
-class NEXUS_API UNexus : public UObject
+class DERIEVE_API UNexus : public UObject
 {
 	GENERATED_BODY()
 public:
@@ -40,7 +40,7 @@ public:
 		static void StreamDisconnect();
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Stream - Dimension"), Category = "Nexus: Stream", meta = (Keywords = "dimension nexus stream device magic"))
-		static void StreamDimension(FString& stream);
+		static bool StreamDimension(FString& stream);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Stream - Output"), Category = "Nexus: Stream", meta = (Keywords = "output nexus stream device magic"))
 		static void DeviceOutput(FString value);
@@ -125,4 +125,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (DisplayName = "LED Module"), Category = "Physical Data - Modules", meta = (Keywords = "data serial magic"))
 		static FString LED(int port, ELEDColor color);*/
+
+private: 
+
+	// TODO: create multiple dynamic streams
+	HANDLE serialPortH; // global reference to serial port
+
+
 };

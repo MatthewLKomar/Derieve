@@ -10,9 +10,8 @@
 #include <iostream>
 #include <sstream>
 #include <tchar.h>
+//#include "Logging/LogMacros.h"
 
-// TODO: create multiple dynamic streams
-HANDLE serialPortH; // global reference to serial port
 
 // TODO: convert to UStruct and broader Hardware UStruct
 struct Port {
@@ -42,6 +41,7 @@ bool UNexus::StreamConnect(FString portNumber, bool wireless)
 			return false;
 		}
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Error"));
+		return false;
 	}
 
 	// define serial properties
@@ -49,6 +49,7 @@ bool UNexus::StreamConnect(FString portNumber, bool wireless)
 	dcbSP.DCBlength = sizeof(dcbSP);
 	if (!GetCommState(serialPortH, &dcbSP)) {
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("State Error"));
+		return false;
 	}
 	dcbSP.BaudRate = CBR_115200;
 	dcbSP.ByteSize = 8;
@@ -57,6 +58,7 @@ bool UNexus::StreamConnect(FString portNumber, bool wireless)
 
 	if (!SetCommState(serialPortH, &dcbSP)) {
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Serial Port Set Error"));
+		return false;
 	}
 
 	// create timeout detection
@@ -69,9 +71,10 @@ bool UNexus::StreamConnect(FString portNumber, bool wireless)
 
 	if (!SetCommTimeouts(serialPortH, &timeouts)) {
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Timeout Error"));
+		return false;
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("Stream Started"));
+	UE_LOG(LogTemp, Warning, TEXT("Stream successfuly started"));
 
 	return true;
 }
@@ -80,11 +83,11 @@ bool UNexus::StreamConnect(FString portNumber, bool wireless)
 void UNexus::StreamDisconnect()
 {
 	CloseHandle(serialPortH);
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("Stream Ended"));
+	UE_LOG(LogTemp, Warning, TEXT("Stream Ended"));
 }
 
 // parse stream
-void UNexus::StreamDimension(FString& stream) {
+bool UNexus::StreamDimension(FString& stream) {
 
 	// file buffer variables
 	char szBuff[256] = { 0 };
@@ -96,7 +99,8 @@ void UNexus::StreamDimension(FString& stream) {
 
 	// read from serial port
 	if (!ReadFile(serialPortH, szBuff, 256, &dwBytesRead, NULL)) {
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, TEXT("Stream Closed"));
+		UE_LOG(LogTemp, Error, TEXT("Stream is closed"));
+		return false;
 	}
 	else {
 
