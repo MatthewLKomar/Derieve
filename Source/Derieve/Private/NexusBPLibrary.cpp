@@ -13,6 +13,11 @@
 //#include "Logging/LogMacros.h"
 
 
+// TODO: create multiple dynamic streams
+HANDLE serialPortH; // global reference to serial port
+
+
+
 // TODO: convert to UStruct and broader Hardware UStruct
 struct Port {
 	int module;
@@ -116,30 +121,43 @@ bool UNexus::StreamDimension(FString& stream) {
 		// convert string to FString
 		stream = UTF8_TO_TCHAR(fData.c_str());
 
-		// split stream into ports
-		for (int i = 0; i < portCount; i++) {
+		// split stream into ports 
+		// MLKomar: The for loop sorts values in Ports[PORT VALUES] to PORT DATA
+			//So why not store it immedietally while parsing and discard all the string parsing? 
+			//In fact, why can't we just do this internally when ever stream is called?
+		//UE_LOG(LogTemp, Warning, TEXT("%s"), UTF8_TO_TCHAR(fData.c_str()));
+		for (int i = 0; i < 1; i++) {
 
-			try {
-				ports[i].module = std::stoi(fData.substr(0, fData.find(":")).c_str());
-			}
-			catch (std::invalid_argument const& e) {
-				std::string _test = e.what();
-			}
-
-			try {
-				ports[i].data = UTF8_TO_TCHAR(fData.substr(s.find(":") + 1, fData.find(";") - 2).c_str());
-			}
-			catch (std::invalid_argument const& e) {
-				std::string _test = e.what();
-			}
+			//int semiColonIndex = fData.find(";");
+			//int colonIndex = fData.find(":");
+			//if (semiColonIndex < colonIndex)
+			//{
+			//	break;
+			//}
+			//ports[i].module = std::stoi(fData.substr(0, fData.find(":")).c_str());
+			//UE_LOG(LogTemp, Warning, TEXT("%d"), fData.find(";"));
+			//if (fData.find(";") == -1)
+			//{
+			//	break;
+			//}
+			//ports[i].data = UTF8_TO_TCHAR(fData.substr(s.find(":") + 1, fData.find(";") - 2).c_str());
+			//fData = fData.erase(0, (fData.find(";") + 1));
+			auto string1 = fData.substr(0, fData.find(":"));
+			auto string2 = "20";
+			if (string1.compare(string2) != 0)
+				break;
+			ports[i].module = std::stoi(fData.substr(0, fData.find(":")).c_str());
+			ports[i].data = UTF8_TO_TCHAR(fData.substr(s.find(":") + 1, fData.find(";") - 2).c_str());
 
 			fData = fData.erase(0, (fData.find(";") + 1));
+
+
 		}
 
 		// debug
-		// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, (TEXT("%s"), UTF8_TO_TCHAR(fData.c_str())));
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, (TEXT("%s"), UTF8_TO_TCHAR(fData.c_str())));
 	}
-
+	return true;
 }
 
 // send output to stream

@@ -128,8 +128,6 @@ public:
 
 private: 
 
-	// TODO: create multiple dynamic streams
-	HANDLE serialPortH; // global reference to serial port
 
 
 };
