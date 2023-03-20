@@ -112,6 +112,38 @@ bool UNexus::StreamDimension(FString& stream) {
 		// add characters from buffer to string
 		for (int i = 0; i < sizeof(szBuff); i++) {
 			s = s + szBuff[i];
+			//what to do instead...
+			//....
+			//populate a dictionary
+			//data structure will be composed of
+			//int Key
+			//int Value []
+			/*
+				if (szBuff[i] is newline) 
+					dump what we have into the queue
+					isLastColon = false
+				else if (szBuff[i] is semicolon) 
+					data.key = stoi(keyBuffer)
+					data.value = stoi(valueBuffer)
+					valueBuffer = ""
+					isLastColon = false
+				else if (szBuff[i] is colon)
+					isLastColon = true
+					if valueBuffer is not empty {
+						append(stoi(valueBuffer)) to data.Value array.
+						valueBuffer = ""
+					}
+				else //we are now a number... 
+					if (lastIsColon) // then we're now a value
+					{
+						valueBuffer += szBuff[i]
+					}
+					else keyBuffer += szBuff[i]
+					isLastColon = false
+			
+			this new algorithm will replace everything below and it will help speed up
+			all the other functions
+			*/
 		}
 
 		// split string stream to each new line string
@@ -128,20 +160,6 @@ bool UNexus::StreamDimension(FString& stream) {
 		//UE_LOG(LogTemp, Warning, TEXT("%s"), UTF8_TO_TCHAR(fData.c_str()));
 		for (int i = 0; i < 1; i++) {
 
-			//int semiColonIndex = fData.find(";");
-			//int colonIndex = fData.find(":");
-			//if (semiColonIndex < colonIndex)
-			//{
-			//	break;
-			//}
-			//ports[i].module = std::stoi(fData.substr(0, fData.find(":")).c_str());
-			//UE_LOG(LogTemp, Warning, TEXT("%d"), fData.find(";"));
-			//if (fData.find(";") == -1)
-			//{
-			//	break;
-			//}
-			//ports[i].data = UTF8_TO_TCHAR(fData.substr(s.find(":") + 1, fData.find(";") - 2).c_str());
-			//fData = fData.erase(0, (fData.find(";") + 1));
 			auto string1 = fData.substr(0, fData.find(":"));
 			auto string2 = "20";
 			if (string1.compare(string2) != 0)
@@ -150,8 +168,6 @@ bool UNexus::StreamDimension(FString& stream) {
 			ports[i].data = UTF8_TO_TCHAR(fData.substr(s.find(":") + 1, fData.find(";") - 2).c_str());
 
 			fData = fData.erase(0, (fData.find(";") + 1));
-
-
 		}
 
 		// debug
