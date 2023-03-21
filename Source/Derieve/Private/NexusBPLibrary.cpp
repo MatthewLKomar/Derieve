@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <tchar.h>
+#include <regex>
 //#include "Logging/LogMacros.h"
 
 
@@ -17,14 +18,7 @@
 HANDLE serialPortH; // global reference to serial port
 
 
-
-// TODO: convert to UStruct and broader Hardware UStruct
-struct Port {
-	int module;
-	FString data;
-};
-Port ports[8] = { {0, "0"}, {0, "0"}, {0, "0"}, {0, "0"}, {0, "0"}, {0, "0"}, {0, "0"}, {0, "0"} };
-int portCount = 8;
+using namespace std;
 
 // stream
 // connect to a stream
@@ -99,8 +93,8 @@ bool UNexus::StreamDimension(FString& stream) {
 	DWORD dwBytesRead = 0;
 
 	// string conversion variables
-	std::string s = "";
-	std::string fData = "";
+	string s = "";
+	string fData = "";
 
 	// read from serial port
 	if (!ReadFile(serialPortH, szBuff, 256, &dwBytesRead, NULL)) {
@@ -108,42 +102,77 @@ bool UNexus::StreamDimension(FString& stream) {
 		return false;
 	}
 	else {
-
+		string KeyBuffer = "";
+		string ValueBuffer = "";
+		bool isLastColon = false;
+		TArray<float> TempValues; 
 		// add characters from buffer to string
+
+		//the idea behind this for loop is that we automatically sort the values coming in 
+		//based on the buffer values... 
+		std::regex pattern("^[^.-;:]*$");
+
 		for (int i = 0; i < sizeof(szBuff); i++) {
-			s = s + szBuff[i];
-			//what to do instead...
-			//....
-			//populate a dictionary
-			//data structure will be composed of
-			//int Key
-			//int Value []
-			/*
-				if (szBuff[i] is newline) 
-					dump what we have into the queue
-					isLastColon = false
-				else if (szBuff[i] is semicolon) 
-					data.key = stoi(keyBuffer)
-					data.value = stoi(valueBuffer)
-					valueBuffer = ""
-					isLastColon = false
-				else if (szBuff[i] is colon)
-					isLastColon = true
-					if valueBuffer is not empty {
-						append(stoi(valueBuffer)) to data.Value array.
-						valueBuffer = ""
-					}
-				else //we are now a number... 
-					if (lastIsColon) // then we're now a value
-					{
-						valueBuffer += szBuff[i]
-					}
-					else keyBuffer += szBuff[i]
-					isLastColon = false
+			//Debug output string
+			char val = szBuff[i];
+			s = s + val;
 			
-			this new algorithm will replace everything below and it will help speed up
-			all the other functions
-			*/
+			if (strcmp(&val, "\n") == 0 || strcmp(&val, "\r") == 0
+				|| strcmp(&val, ";") == 0)
+			{
+				//dump what we have into the queue
+				isLastColon = false;
+				//make sure Value Buffer isn't empty (we're assuming it contains numbers in here)
+				if (ValueBuffer.length() > 0 && !std::regex_match(ValueBuffer, pattern))
+					TempValues.Add(stof(ValueBuffer));
+					
+				//add the data into our dictionary
+				PortData.Add(FString(KeyBuffer.c_str()), TempValues);
+				
+				//empty the buffers
+				ValueBuffer = "";
+				KeyBuffer = "";
+				TempValues.Empty();
+
+			}
+			else if (strcmp(&val, ":") == 0)
+			{
+				isLastColon = true;
+				if (ValueBuffer.length() > 0 && 
+					// edge cases to deal with last several values which are rotations...
+					!std::regex_match(ValueBuffer, pattern))
+				{
+					TempValues.Add(stof(ValueBuffer));
+				}
+				ValueBuffer = "";
+
+			}
+			else //We are now a number... 
+			{
+				if (isLastColon) //we're a value number
+				{
+					ValueBuffer += szBuff[i];
+
+					//need to determine if colon or semicolon is closer... 
+					//potentially unsafe...
+					//string str = string(szBuff);
+					//auto colon = str.find(":", i);
+					//auto semiColon = str.find(";", i);
+					//if (colon == -1 || semiColon == -1)
+					//	isLastColon = true;
+					//else if (colon < semiColon)
+					//	isLastColon = true;
+					//else //if neither default to isLastColon...
+					//	isLastColon = false;
+				}
+				else //we're a key number
+				{
+					KeyBuffer += szBuff[i];
+
+				}
+				isLastColon = false;
+
+			}
 		}
 
 		// split string stream to each new line string
@@ -158,6 +187,7 @@ bool UNexus::StreamDimension(FString& stream) {
 			//So why not store it immedietally while parsing and discard all the string parsing? 
 			//In fact, why can't we just do this internally when ever stream is called?
 		//UE_LOG(LogTemp, Warning, TEXT("%s"), UTF8_TO_TCHAR(fData.c_str()));
+		/*
 		for (int i = 0; i < 1; i++) {
 
 			auto string1 = fData.substr(0, fData.find(":"));
@@ -169,9 +199,10 @@ bool UNexus::StreamDimension(FString& stream) {
 
 			fData = fData.erase(0, (fData.find(";") + 1));
 		}
+		*/
 
 		// debug
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, (TEXT("%s"), UTF8_TO_TCHAR(fData.c_str())));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, (TEXT("%s"), UTF8_TO_TCHAR(fData.c_str())));
 	}
 	return true;
 }
@@ -626,12 +657,14 @@ void UNexus::Flex(const int port, bool& found, int& raw, int& bend) {
 
 // force
 void UNexus::Force(const int port, bool& found, int& raw, int& strength) {
-	int mN = 20;
+	FString mN = "20";
 	int mI = 0;
 	bool f = false;
 	bool search = false;
 
-	if (search == false) {
+	auto values = PortData.Find(mN);
+
+	/*if (search == false) {
 		if (port == 0) {
 			for (int i = 0; i < portCount; i++) {
 				if (ports[i].module == mN) {
@@ -661,20 +694,20 @@ void UNexus::Force(const int port, bool& found, int& raw, int& strength) {
 				search = true;
 			}
 		}
-	}
+	}*/
 
-	if (f) {
+	//if (f) {
 		//TODO: generic parse data function
-		std::string s = std::string(TCHAR_TO_UTF8(*ports[mI].data));
+		//std::string s = std::string(TCHAR_TO_UTF8(*ports[mI].data));
 
-		float _raw = std::stof(s);
+		float _raw = *values->FindByKey(0);
 
 
 		float _strength = ((_raw)/4095)*(100);
 
-		raw = std::stoi(s);
+		raw = int(_raw);
 		strength = static_cast<int>(_strength);
-	}
+	//}
 }
 
 // gesture
