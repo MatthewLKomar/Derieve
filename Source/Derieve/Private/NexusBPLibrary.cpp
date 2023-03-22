@@ -171,7 +171,7 @@ bool UNexus::StreamDimension(FString& stream) {
 		}
 
 		// debug
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, (TEXT("%s"), UTF8_TO_TCHAR(fData.c_str())));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, (TEXT("%s"), UTF8_TO_TCHAR(fData.c_str())));
 	}
 	return true;
 }
